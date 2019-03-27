@@ -8,8 +8,8 @@ import { AlertifyService } from '../_services/alertify.service';
   styleUrls: ['./register.component.css']
 })
 export class RegisterComponent implements OnInit {
-  @Input() valuesFromHome: any;
-  @Output() cancelRegister = new EventEmitter();
+  @Input() valuesFromHome: any; // pass param từ parent component đến child component
+  @Output() cancelRegister = new EventEmitter(); // pass event từ child compenent đến parent component, giá trị của param ở hàm emit
   model: any = {};
 
   constructor(private authService: AuthService,
@@ -27,7 +27,7 @@ export class RegisterComponent implements OnInit {
   }
 
   cancel() {
-    this.cancelRegister.emit(false);
+    this.cancelRegister.emit(false); // có thể emit một object bất kì
   }
 
 }
