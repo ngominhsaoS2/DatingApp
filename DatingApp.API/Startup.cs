@@ -25,6 +25,8 @@ using Microsoft.AspNetCore.Identity;
 using DatingApp.API.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc.Authorization;
+using Microsoft.Extensions.FileProviders;
+using System.IO;
 
 namespace DatingApp.API
 {
@@ -43,10 +45,12 @@ namespace DatingApp.API
             services.AddDbContext<DataContext>(x =>
                 x.UseMySql(Configuration.GetConnectionString("DefaultConnection"))
                     .ConfigureWarnings(warnings => warnings.Ignore(CoreEventId.IncludeIgnoredWarning)));
+
             services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_2_1)
                 .AddJsonOptions(opt => {
                     opt.SerializerSettings.ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoopHandling.Ignore;
                 });
+
             services.AddCors();
             services.Configure<CloudinarySettings>(Configuration.GetSection("CloudinarySettings"));
             services.AddAutoMapper();
@@ -70,8 +74,10 @@ namespace DatingApp.API
 
         public void ConfigureServices(IServiceCollection services)
         {
-            services.AddDbContext<DataContext>(x => x.UseSqlite(Configuration.GetConnectionString("DefaultConnection")));
+            //services.AddDbContext<DataContext>(x => x.UseSqlite(Configuration.GetConnectionString("DefaultConnection")));
             
+            services.AddDbContext<DataContext>(x => x.UseSqlServer(Configuration.GetConnectionString("SqlConnection")));
+
             IdentityBuilder builder = services.AddIdentityCore<User>(opt => {
                 opt.Password.RequireDigit = false;
                 opt.Password.RequiredLength = 4;
@@ -104,6 +110,8 @@ namespace DatingApp.API
                 options.AddPolicy("ModeratePhotoRole", policy => policy.RequireRole("Admin", "Moderator"));
                 options.AddPolicy("VipOnle", policy => policy.RequireRole("VIP"));
             });
+
+            services.AddSpaStaticFiles(); // SaoNM
 
             services.AddMvc(options => {
                 var policy = new AuthorizationPolicyBuilder()
@@ -155,12 +163,41 @@ namespace DatingApp.API
             app.UseAuthentication();
             app.UseDefaultFiles();
             app.UseStaticFiles();
-            app.UseMvc(routes => {
+            /* app.UseMvc(routes => {
                 routes.MapSpaFallbackRoute(
                     name: "spa-fallback",
                     defaults: new { controller = "Fallback", action = "Index" }
                 );
-            });
+            }); */
+
+            app.UseSpaStaticFiles(new StaticFileOptions
+            {
+                FileProvider = new PhysicalFileProvider(Path.Combine(Directory.GetCurrentDirectory(), "wwwroot"))
+            }); // SaoNM
+
+            app.UseMvc(); // SaoNM
+
+            app.Map("", client =>
+            {
+                client.UseSpa(spa =>
+                {
+                    spa.Options.SourcePath = "wwwroot/client";
+                    spa.Options.DefaultPageStaticFileOptions = new StaticFileOptions
+                    {
+                        FileProvider = new PhysicalFileProvider(Path.Combine(Directory.GetCurrentDirectory(), "wwwroot/client"))
+                    };
+                });
+            }).Map("/admin", admin =>
+            {
+                admin.UseSpa(spa =>
+                {
+                    spa.Options.SourcePath = "wwwroot/admin";
+                    spa.Options.DefaultPageStaticFileOptions = new StaticFileOptions
+                    {
+                        FileProvider = new PhysicalFileProvider(Path.Combine(Directory.GetCurrentDirectory(), "wwwroot/admin"))
+                    };
+                });
+            }); // SaoNM
         }
     }
 }

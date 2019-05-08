@@ -469,6 +469,8 @@ MIT
 
 ngx-bootstrap/datepicker
 
+ngx-bootstrap/modal
+
 ngx-bootstrap/buttons
 
 ngx-bootstrap/pagination
